@@ -7,16 +7,25 @@ import {
   Pressable,
   View,
   TouchableOpacity,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../config";
 import { useAuth } from "../../context/AuthContext";
+import { toggleUserPrivacy } from "../../services/userService";
 
-const SettingsModal = () => {
-
-  const {logout} = useAuth()  
+const SettingsModal = ({ user }) => {
+  const { logout } = useAuth();
 
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [isPrivate, setIsPrivate] = useState(user.isPrivate);
+  const userId = user.luid ? user.luid : user._id;
+
+  const togglePrivacy = () => {
+    setIsPrivate((prev) => !prev);
+    toggleUserPrivacy(userId, !isPrivate);
+  };
   return (
     <View>
       <Modal
@@ -72,7 +81,28 @@ const SettingsModal = () => {
                 />
                 <Text style={styles.menuText}>Privacy</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={logout} style={[styles.menuItem, styles.logout]}>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={styles.menuText}>
+                  {isPrivate ? "Profil Durumu: Gizli" : "Profil Durumu: Açık"}
+                </Text>
+                <Switch
+                  value={isPrivate ? true : false}
+                  onValueChange={togglePrivacy}
+                  thumbColor={isPrivate ? COLORS.lightGray : COLORS.secondary}
+                  trackColor={{ false: COLORS.primary, true: COLORS.secondary }}
+                />
+              </View>
+              <TouchableOpacity
+                onPress={logout}
+                style={[styles.menuItem, styles.logout]}
+              >
                 <Ionicons
                   name="log-out-outline"
                   size={24}
@@ -106,7 +136,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     padding: 0,
     alignItems: "stretch",
-    
   },
   modalHeader: {
     flexDirection: "row",
@@ -115,7 +144,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
-    backgroundColor:"black",
+    backgroundColor: "black",
   },
   modalTitle: {
     fontSize: 18,
@@ -134,7 +163,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     marginBottom: 8,
-    // backgroundColor: COLORS.white,
   },
   menuText: {
     marginLeft: 12,

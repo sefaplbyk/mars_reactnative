@@ -24,8 +24,7 @@ const AddPostScreen = () => {
   const [image, setImage] = useState(null);
 
   const { user } = useAuth();
-  const authorId = user.id;
-
+  const authorId = (user?.luid ? user?.luid : user._id);
   const handlePost = async () => {
     const post = { title, content, authorId };
     await createPost({ title, content, authorId });
@@ -45,7 +44,6 @@ const AddPostScreen = () => {
       quality: 1,
     });
 
-    console.log(result);
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
@@ -64,7 +62,6 @@ const AddPostScreen = () => {
             style={{
               width: "100%",
               height: 400,
-              // backgroundColor: "black",
             }}
           >
             {image ? (

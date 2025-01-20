@@ -5,16 +5,13 @@ import { getProfilePic } from "../../utils/profilePicUtils";
 import { useNavigation } from "@react-navigation/native";
 
 const UserCard = ({username, email, profilePicture,id}) => {
-  console.log(id)
   const navigation = useNavigation()
   return (
     <Pressable
     onPress={() => navigation.navigate("UserProfile", { id })}
       style={{
-        // backgroundColor: COLORS.card,
         borderWidth: 1,
         backgroundColor: "rgba(0,0,0,0.7)",
-        // borderColor: COLORS.card,
         borderColor: "white",
         alignItems: "center",
         borderRadius: 10,
@@ -54,7 +51,6 @@ const UserCard = ({username, email, profilePicture,id}) => {
       </View>
       <TouchableOpacity
         style={{
-          //   backgroundColor: "rgba(161, 32, 32, 0.7)",
           backgroundColor: COLORS.accent,
           padding: 10,
           width: "80%",

@@ -46,3 +46,16 @@ export const getUserByEmail = async (email) => {
     }
   }
 };
+
+export const toggleUserPrivacy = async (userId,isPrivate) => {
+  try {
+
+    const response = await axios.put(`${API_URL}/users/userPrivacy/${userId}`, {
+      isPrivate: isPrivate,
+    });
+    return response.data;
+  } catch (error) {
+    
+  }
+
+}

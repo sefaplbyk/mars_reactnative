@@ -1,4 +1,4 @@
-import { View, ActivityIndicator, FlatList } from "react-native";
+import { View, ActivityIndicator, FlatList, Text } from "react-native";
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import Screen from "../components/layout/Screen";
 import Post from "../components/post/Post";
@@ -10,7 +10,7 @@ const HomeScreen = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  useLayoutEffect(() => {
+  useEffect(() => {
     fetchPosts();
   }, []);
 
@@ -20,27 +20,11 @@ const HomeScreen = () => {
       const data = await getAllPosts();
       setPosts(data);
     } catch (err) {
-    
-     setError(err.message);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
-  const renderPostItem = ({ item }) => (
-
-      <Post
-      postId = {item.id}
-      postAuthorId={item.authorId}
-      userName={item.userName}
-      userEmail={item.userEmail}
-      userProfilePic={item.userProfilePic}
-      content={item.content}
-      likesCount={item.likesCount}
-      commentCount={item.commentsCount || 0}
-      date={formatDate(item.date)}
-      />
-    
-  );
 
   if (loading) {
     return (
@@ -50,6 +34,23 @@ const HomeScreen = () => {
     );
   }
 
+  const renderPostItem = ({ item }) => {
+
+    return (
+      <Post
+        postId={item.id}
+        postAuthorId={item.authorId}
+        userName={item.userName}
+        userEmail={item.userEmail}
+        userProfilePic={item.userProfilePic}
+        content={item.content}
+        likes={item.likes}
+        commentsCount={item.commentsCount || 0}
+        date={formatDate(item.date)}
+        item={item}
+      />
+    );
+  };
   return (
     <Screen>
       <FlatList

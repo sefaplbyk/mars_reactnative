@@ -4,22 +4,27 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "../../config";
 import { getProfilePic } from "../../utils/profilePicUtils";
+import { togglePostLike } from "../../services/postService";
+import { useAuth } from "../../context/AuthContext";
 
 const Post = ({
-  postAuthorId ,
+  postAuthorId,
   postId,
   userName,
   userEmail,
   userProfilePic,
   content,
-  commentCount,
-  likesCount,
+  commentsCount,
+  likes,
   date,
+  item,
 }) => {
-  const [liked, setLiked] = useState(false);
+  const { user } = useAuth();
+  const [liked, setLiked] = useState(likes.includes((user.luid ? user.luid : user._id)) || false);
   const navigation = useNavigation();
   const [textShown, setTextShown] = useState(false);
   const [lengthMore, setLengthMore] = useState(false);
+  const [likesLength, setLikesLength] = useState(likes.length || 0);
   const toggleNumberOfLines = () => {
     setTextShown(!textShown);
   };
@@ -30,24 +35,20 @@ const Post = ({
     navigation.navigate("PostNavigator", {
       screen: "PostDetailScreen",
       params: {
-        post: {
-          id: postId,
-          postAuthorId,
-          image: userProfilePic,
-          title: content,
-          userName: userName,
-          userEmail: userEmail,
-          date,
-          likesCount,
-        },
+        postId:postId
       },
     });
+  };
+  const handlePressLike = async () => {
+    await togglePostLike(postId, user.luid ? user.luid : user._id);
+    setLiked(!liked);
+    setLikesLength(liked ? likesLength - 1 : likesLength + 1);
   };
   return (
     <View style={styles.postContainer}>
       {/* Post Left  */}
       <Pressable
-        onPress={() => navigation.navigate("UserProfile", { id:postAuthorId })}
+        onPress={() => navigation.navigate("UserProfile", { id: postAuthorId })}
       >
         <Image
           source={getProfilePic(userProfilePic)}
@@ -57,7 +58,9 @@ const Post = ({
       {/* Post Right */}
       <View style={styles.postRight}>
         <Pressable
-          onPress={() => navigation.navigate("UserProfile", { id:postAuthorId })}
+          onPress={() =>
+            navigation.navigate("UserProfile", { id: postAuthorId })
+          }
           style={styles.postHeader}
         >
           <Text style={styles.userName}>{userName}</Text>
@@ -92,7 +95,7 @@ const Post = ({
           <View style={{ flexDirection: "row", gap: 20 }}>
             <Pressable onPress={handlePostDetail} style={styles.actionItem}>
               <Icon name="chatbubble-outline" color={COLORS.white} size={24} />
-              <Text style={styles.actionText}>{commentCount}</Text>
+              <Text style={styles.actionText}>{commentsCount}</Text>
             </Pressable>
 
             <View style={styles.actionItem}>
@@ -101,17 +104,17 @@ const Post = ({
                   name="heart-sharp"
                   color={COLORS.white}
                   size={24}
-                  onPress={() => setLiked(!liked)}
+                  onPress={handlePressLike}
                 />
               ) : (
                 <Icon
                   name="heart-outline"
                   color={COLORS.white}
                   size={24}
-                  onPress={() => setLiked(!liked)}
+                  onPress={handlePressLike}
                 />
               )}
-              <Text style={styles.actionText}>{likesCount}</Text>
+              <Text style={styles.actionText}>{likesLength}</Text>
             </View>
           </View>
           <Text style={styles.postDate}>{date}</Text>
@@ -123,14 +126,12 @@ const Post = ({
 };
 
 export default Post;
-
 const styles = StyleSheet.create({
   postContainer: {
     flexDirection: "row",
     paddingVertical: 20,
     paddingHorizontal: 10,
     backgroundColor: "rgba(12,12,12,0.75)",
-    // backgroundColor: "rgba(0,0,0,0.75)",
   },
   userProfilePhoto: {
     width: 50,

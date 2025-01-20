@@ -44,7 +44,6 @@ export default function HomeNavigator() {
           },
           headerTitleAlign: "center",
           headerLeft: () => (
-            // <Icon color={"white"} name="planet-sharp" size={24} />
             <Image
               source={require("../../assets/splashNew.jpg")}
               resizeMode="cover"

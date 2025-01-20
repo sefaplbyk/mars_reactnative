@@ -9,12 +9,11 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { COLORS } from "../config";
-import axios from 'axios';
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+
+import { API_URL } from "react-native-dotenv";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-
-import {API_URL} from 'react-native-dotenv';
 
 export default function LoginScreen({ navigation }) {
   const [credentials, setCredentials] = useState({
@@ -23,9 +22,7 @@ export default function LoginScreen({ navigation }) {
   });
   const [error, setError] = useState("");
 
-  console.log(API_URL)
-  const {login} = useAuth()
-
+  const { login } = useAuth();
   const handleLogin = async () => {
     if (!credentials.email || !credentials.password) {
       setError("Email and password are required.");
@@ -33,27 +30,23 @@ export default function LoginScreen({ navigation }) {
     }
 
     try {
-      const response = await axios.post(API_URL+'/auth/login', {
+      const response = await axios.post(API_URL + "/auth/login", {
         email: credentials.email,
-        password: credentials.password
+        password: credentials.password,
       });
       if (response.status === 200) {
-        // navigation.navigate("HomeNavigator");
-        AsyncStorage.setItem('userToken', response.data.token)
-      await AsyncStorage.setItem('userId', response.data.user.id);
-
-      login({
-        id: response.data.user.id,
-        email: response.data.user.email,
-        username: response.data.user.username,
-        profilePicture: response.data.user.profilePicture
-      });
+        await AsyncStorage.setItem("userToken", response.data.token);
+        login({
+          luid: response.data.user.luid,
+          email: response.data.user.email,
+          username: response.data.user.username,
+          profilePicture: response.data.user.profilePicture,
+        });
       }
     } catch (error) {
       setError(error.response?.data?.message || "Login failed");
     }
   };
-
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -68,18 +61,22 @@ export default function LoginScreen({ navigation }) {
               style={styles.textInput}
               placeholderTextColor={"gray"}
               placeholder="E-Mail"
-              secureTextEntry = {false}
+              secureTextEntry={false}
               value={credentials.email}
-              onChangeText={(text) => setCredentials({ ...credentials, email: text })}
+              onChangeText={(text) =>
+                setCredentials({ ...credentials, email: text })
+              }
               keyboardType="email-address"
             />
             <TextInput
               style={styles.textInput}
               placeholderTextColor={"gray"}
               placeholder="Password"
-              secureTextEntry = {true}
+              secureTextEntry={true}
               value={credentials.password}
-              onChangeText={(text) => setCredentials({ ...credentials, password: text })}
+              onChangeText={(text) =>
+                setCredentials({ ...credentials, password: text })
+              }
             />
           </View>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -89,7 +86,14 @@ export default function LoginScreen({ navigation }) {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigation.navigate("RegisterScreen")}
-              style={[styles.button, { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.secondary }]}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: "transparent",
+                  borderWidth: 1,
+                  borderColor: COLORS.secondary,
+                },
+              ]}
             >
               <Text style={styles.buttonText}>Register</Text>
             </TouchableOpacity>

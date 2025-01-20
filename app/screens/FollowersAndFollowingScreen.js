@@ -179,7 +179,7 @@ const UserList = ({ type }) => {
   const handleToggleFollow = (userId) => {
     setUsers(
       users.map((user) =>
-        user.id === userId ? { ...user, isFollowing: !user.isFollowing } : user
+        user.luid === userId ? { ...user, isFollowing: !user.isFollowing } : user
       )
     );
   };

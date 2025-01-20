@@ -22,51 +22,62 @@ import Icon from "react-native-vector-icons/Ionicons";
 import Post from "../components/post/Post";
 import { getUserPosts } from "../services/postService";
 import { formatDate } from "../utils/formatDate";
+import Screen from "../components/layout/Screen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ProfileScreen = ({ route }) => {
-  console.log(route.params, "route.params");
   const { user } = useAuth();
   const navigation = useNavigation();
-  const userId = route.params?.id || user.id;
+  const userId = route.params?.id || (user.luid ? user.luid : user._id);
   const [userData, setUserData] = useState({});
   const [postsData, setPostsData] = useState([]);
   const [loading, setLoading] = useState(true);
-  console.log(userId, "userId");
-
   const getUser = async () => {
     try {
+      setLoading(true);
       const userProfile = await getUserById(userId);
       setUserData(userProfile);
     } catch (error) {
-      console.log(error, "error");
+      console.log(error, "errorFetchUser");
+    } finally {
+      setLoading(false);
     }
   };
-
   const getPost = async () => {
     try {
+      setLoading(true);
       const userPosts = await getUserPosts(userId);
       setPostsData(userPosts);
     } catch (error) {
-      console.log(error, "error");
+      console.log(error, "errorFetchUserPost");
+    } finally {
+      setLoading(false);
     }
   };
-
   useEffect(() => {
     getUser();
     getPost();
-  }, []);
-
+  }, [userId]);
+  if (loading) {
+    return (
+      <Screen>
+        <ActivityIndicator size="large" color={COLORS.secondary} />
+      </Screen>
+    );
+  }
   const renderPostItem = ({ item }) => (
     <Post
+      postId={item.id}
+      postAuthorId={item.authorId}
       userName={item.userName}
       userEmail={item.userEmail}
       userProfilePic={item.userProfilePic}
       content={item.content}
-      commentsCount={item.commentsCount}
-      likesCount={item.likesCount}
+      likes={item.likes}
+      commentsCount={item.commentsCount || 0}
       date={formatDate(item.date)}
+      item={item}
     />
-
   );
   return (
     <ScrollView style={styles.container}>
@@ -77,8 +88,8 @@ const ProfileScreen = ({ route }) => {
           color={COLORS.white}
           onPress={() => navigation.goBack()}
         />
-        <Text style={styles.username}>{userData.username}</Text>
-        <SettingsModal />
+        <Text style={styles.username}>{userData?.username}</Text>
+        <SettingsModal user={user} />
       </View>
       <View style={styles.profileSection}>
         <View style={styles.profileHeader}>
@@ -88,37 +99,37 @@ const ProfileScreen = ({ route }) => {
           />
           <View style={styles.profileStats}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{userData.postsCount}</Text>
+              <Text style={styles.statNumber}>{userData?.postsCount}</Text>
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <Pressable
               onPress={() =>
                 navigation.navigate("FollowersAndFollowingScreen", {
-                  username: userData.fullName,
+                  username: userData?.fullName,
                 })
               }
               style={styles.statItem}
             >
-              <Text style={styles.statNumber}>{userData.followersCount}</Text>
+              <Text style={styles.statNumber}>{userData?.followersCount}</Text>
               <Text style={styles.statLabel}>Followers</Text>
             </Pressable>
             <Pressable
               onPress={() =>
                 navigation.navigate("FollowersAndFollowingScreen", {
-                  username: userData.fullName,
+                  username: userData?.fullName,
                 })
               }
               style={styles.statItem}
             >
-              <Text style={styles.statNumber}>{userData.followingCount}</Text>
+              <Text style={styles.statNumber}>{userData?.followingCount}</Text>
               <Text style={styles.statLabel}>Following</Text>
             </Pressable>
           </View>
         </View>
 
         <View style={styles.bioSection}>
-          <Text style={styles.name}>{userData.fullname}</Text>
-          <Text style={styles.bio}>{userData.bio}</Text>
+          <Text style={styles.name}>{userData?.fullname}</Text>
+          <Text style={styles.bio}>{userData?.bio}</Text>
         </View>
 
         <View style={styles.buttonGroup}>
@@ -165,7 +176,9 @@ const ProfileScreen = ({ route }) => {
           }}
         >
           {postsData.length === 0 &&
-            (userId === user.id ? "Post paylaşmak için tıklayın." : "")}
+            (userId === (user.luid ? user.luid : user._id)
+              ? "Post paylaşmak için tıklayın."
+              : "")}
         </Text>
       </Pressable>
     </ScrollView>

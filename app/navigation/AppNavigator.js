@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import HomeNavigator from "./HomeNavigator";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AuthNavigator from "./AuthNavigator";
@@ -8,12 +8,25 @@ import PostNavigator from "./PostNavigator";
 import ChatNavigator from "./ChatNavigator";
 import FollowersAndFollowingScreen from "../screens/FollowersAndFollowingScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserById } from "../services/userService";
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
+  const { isLoggedIn, setIsLoggedIn,setUser } = useAuth();
 
-  const { isLoggedIn } = useAuth();
-
+  const checkAuth = async () => {
+    const token = await AsyncStorage.getItem("userToken");
+    const userId = await AsyncStorage.getItem("userId");
+    if (token && userId) {
+      setIsLoggedIn(true);
+      const getUser = await getUserById(userId);
+      setUser(getUser)
+    }
+  };
+  useEffect(() => {
+    checkAuth();
+  }, []);
   return (
     <Stack.Navigator>
       {isLoggedIn ? (
@@ -33,27 +46,38 @@ const AppNavigator = () => {
           }}
         />
       )}
-      <Stack.Screen name="PostNavigator" component={PostNavigator}  options={{
+      <Stack.Screen
+        name="PostNavigator"
+        component={PostNavigator}
+        options={{
           headerShown: false,
-        }}/>
-      <Stack.Screen name="ChatNavigator" component={ChatNavigator}  options={{
+        }}
+      />
+      <Stack.Screen
+        name="ChatNavigator"
+        component={ChatNavigator}
+        options={{
           headerShown: false,
-        }}/>
-        <Stack.Screen name="FollowersAndFollowingScreen" component={FollowersAndFollowingScreen} options={{
+        }}
+      />
+      <Stack.Screen
+        name="FollowersAndFollowingScreen"
+        component={FollowersAndFollowingScreen}
+        options={{
           headerShown: false,
-        }}/>
-        <Stack.Screen 
-      name="UserProfile" 
-      component={ProfileScreen}
-      options={{ 
-        tabBarButton: () => null,
-        tabBarStyle: { display: 'none' },
-        headerShown: false,
-      }}
-    />
+        }}
+      />
+      <Stack.Screen
+        name="UserProfile"
+        component={ProfileScreen}
+        options={{
+          tabBarButton: () => null,
+          tabBarStyle: { display: "none" },
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 };
-
 
 export default AppNavigator;

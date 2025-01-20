@@ -93,9 +93,7 @@ const ChatScreen = ({ navigation }) => {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              // backgroundColor: "rgba(161, 32, 32, 0.7)",
               borderWidth: 1,
-              // borderColor: COLORS.secondary,
               borderColor: "white",
               gap: 10,
               paddingHorizontal: 10,

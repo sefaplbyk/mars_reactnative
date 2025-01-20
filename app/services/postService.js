@@ -39,7 +39,6 @@ export const createPost = async (postData) => {
 
 export const getAllPosts = async () => {
   try {
-    console.log(API_URL, "apiurl");
     const response = await axios.get(`${API_URL}/posts/all`);
     return response.data;
   } catch (error) {
@@ -80,6 +79,38 @@ export const getComment = async (postId) => {
     const response = await axios.get(
       `${API_URL}/posts/getPostComment/${postId}`
     );
+    return response.data;
+  } catch (error) {
+    console.error("Error details:", {
+      message: error.message,
+      response: error.response?.data,
+      url: error.config?.url,
+      status: error.response?.status,
+      method: error.config?.method,
+    });
+  }
+};
+
+export const togglePostLike = async (postId, userId) => {
+  try {
+    const response = await axios.post(`${API_URL}/posts/toggleLike/${postId}`, {
+      userId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error details:", {
+      message: error.message,
+      response: error.response?.data,
+      url: error.config?.url,
+      status: error.response?.status,
+      method: error.config?.method,
+    });
+  }
+};
+
+export const getPost = async (postId) => {
+  try {
+    const response = await axios.get(`${API_URL}/posts/postDetail/${postId}`);
     return response.data;
   } catch (error) {
     console.error("Error details:", {

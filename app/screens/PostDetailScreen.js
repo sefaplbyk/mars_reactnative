@@ -19,24 +19,38 @@ import Icon from "react-native-vector-icons/Ionicons";
 import Comment from "../components/comment/Comment";
 import Screen from "../components/layout/Screen";
 import { COLORS } from "../config";
-import { addComment, getComment } from "../services/postService";
+import {
+  addComment,
+  getComment,
+  getPost,
+  togglePostLike,
+} from "../services/postService";
 import { useAuth } from "../context/AuthContext";
 import { getProfilePic } from "../utils/profilePicUtils";
 import { formatDate } from "../utils/formatDate";
 
 const PostDetailScreen = ({ route }) => {
   const { user } = useAuth();
-  const { post } = route.params;
+  const { postId } = route.params;
+  const [post, setPost] = useState();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(
+    post?.likes.includes(user.luid ? user.luid : user._id) || false
+  );
+  const [likesLength, setLikesLength] = useState(post?.likes.length || 0);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [textShown, setTextShown] = useState(false);
   const [lengthMore, setLengthMore] = useState(false);
-  const handleComment = async () => {
-    addComment({ postId: post.id, authorId: user.id, content: newComment });
-    setNewComment("");
-  };
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPost();
+  }, [postId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [post]);
 
   const toggleNumberOfLines = () => {
     setTextShown(!textShown);
@@ -45,25 +59,49 @@ const PostDetailScreen = ({ route }) => {
   const onTextLayout = useCallback((e) => {
     setLengthMore(e.nativeEvent.lines.length >= 4);
   }, []);
+
+  const fetchPost = async () => {
+    try {
+      setLoading(true);
+      const fetchedPost = await getPost(postId);
+      setPost(fetchedPost);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const fetchComments = async () => {
     try {
       setCommentsLoading(true);
-      const commentsData = await getComment(post.id);
-      setComments(commentsData); 
+      const commentsData = await getComment(post._id);
+      setComments(commentsData);
     } catch (error) {
-      console.error("Error fetching comments:", error);
+      console.log("Error fetching comments:", error);
     } finally {
       setCommentsLoading(false);
     }
   };
-
-  useLayoutEffect(() => {
-    fetchComments();
-  }, [post.id]);
-
-  const toggleLike = () => {
+  const handleComment = async () => {
+    const resComm = await addComment({
+      postId: post._id,
+      authorId: user.luid ? user.luid : user._id,
+      content: newComment,
+    });
+    setComments([resComm, ...comments]);
+    setNewComment("");
+  };
+  const toggleLike = async () => {
+    togglePostLike(post._id, user.luid ? user.luid : user._id);
+    setLikesLength(liked ? likesLength - 1 : likesLength + 1);
     setLiked(!liked);
   };
+  useEffect(() => {
+    if (post) {
+      setLiked(post?.likes.includes(user.luid ? user.luid : user._id));
+      setLikesLength(post.likes.length);
+    }
+  }, [post, user]);
 
   const renderCommentItem = ({ item }) => {
     return (
@@ -80,36 +118,32 @@ const PostDetailScreen = ({ route }) => {
             <Text style={styles.commentTime}>{formatDate(item.createdAt)}</Text>
           </View>
           <Text style={styles.commentText}>{item.content}</Text>
-          <View style={styles.commentActions}>
-            <TouchableOpacity style={styles.commentAction}>
-              <Icon name="heart-outline" size={16} color="#666" />
-              <Text style={styles.commentActionText}>Like</Text>
-            </TouchableOpacity>
-            {/* <TouchableOpacity style={styles.commentAction}>
-              <Icon name="chatbubble-outline" size={16} color="#666" />
-              <Text style={styles.commentActionText}>Reply</Text>
-            </TouchableOpacity> */}
-          </View>
         </View>
       </View>
     );
   };
-
+  if (loading) {
+    return (
+      <Screen>
+        <ActivityIndicator size="large" color={COLORS.secondary} />
+      </Screen>
+    );
+  }
   return (
     <View style={styles.container}>
       <View style={styles.postContainer}>
         {/* Post Left */}
         <View>
           <Image
-            source={getProfilePic(post.image)}
+            source={getProfilePic(post.authorId.profilePicture)}
             style={styles.userProfilePhoto}
           />
         </View>
         {/* Post Right */}
         <View style={styles.postRight}>
           <View style={styles.postHeader}>
-            <Text style={styles.userName}>{post.userName}</Text>
-            <Text style={styles.userEmail}>{post.userEmail}</Text>
+            <Text style={styles.userName}>{post.authorId.username}</Text>
+            <Text style={styles.userEmail}>{post.authorId.email}</Text>
           </View>
           {/* <Text style={styles.postContent}>{post.title}</Text> */}
           <ScrollView style={{ maxHeight: 200 }}>
@@ -118,7 +152,7 @@ const PostDetailScreen = ({ route }) => {
               numberOfLines={textShown ? undefined : 5}
               style={styles.postContent}
             >
-              {post.title}
+              {post.content}
             </Text>
           </ScrollView>
           {lengthMore ? (
@@ -156,10 +190,10 @@ const PostDetailScreen = ({ route }) => {
                     onPress={toggleLike}
                   />
                 )}
-                <Text style={styles.actionText}>{post.likesCount}</Text>
+                <Text style={styles.actionText}>{likesLength}</Text>
               </View>
             </View>
-            <Text style={styles.postDate}>{post.date}</Text>
+            <Text style={styles.postDate}>{formatDate(post.createdAt)}</Text>
           </View>
         </View>
         {/* <View style={styles.separator} /> */}

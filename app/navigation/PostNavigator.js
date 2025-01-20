@@ -10,7 +10,6 @@ const PostNavigator = () => {
         name="PostDetailScreen"
         component={PostDetailScreen}
         options={{
-          // headerShown: false,
           headerStyle: {
             backgroundColor: "black",
           },
