@@ -9,9 +9,8 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { COLORS } from "../config";
-import axios from 'axios';
-import {API_URL} from 'react-native-dotenv';
-
+import axios from "axios";
+import { API_URL } from "react-native-dotenv";
 
 export default function RegisterScreen({ navigation }) {
   const [user, setUser] = useState({
@@ -24,7 +23,13 @@ export default function RegisterScreen({ navigation }) {
   const [error, setError] = useState("");
 
   const validateAndRegister = async () => {
-    if (!user.name || !user.username || !user.email || !user.password || !user.confirmPassword) {
+    if (
+      !user.name ||
+      !user.username ||
+      !user.email ||
+      !user.password ||
+      !user.confirmPassword
+    ) {
       setError("All fields are required.");
       return;
     }
@@ -34,22 +39,26 @@ export default function RegisterScreen({ navigation }) {
     }
 
     try {
-      const response = await axios.post(API_URL+'/auth/register', {
+      const response = await axios.post(API_URL + "/auth/register", {
         name: user.name,
         username: user.username,
         email: user.email,
-        password: user.password
+        password: user.password,
       });
 
       if (response.status === 201) {
-        Alert.alert("Registration Successful", "You have successfully registered.", [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.navigate("LoginScreen");
+        Alert.alert(
+          "Registration Successful",
+          "You have successfully registered.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.navigate("LoginScreen");
+              },
             },
-          },
-        ]);
+          ]
+        );
       }
     } catch (error) {
       setError(error.response?.data?.message || "Registration failed");
@@ -104,13 +113,15 @@ export default function RegisterScreen({ navigation }) {
               value={user.password}
               onChangeText={(text) => setUser({ ...user, password: text })}
               secureTextEntry={true}
-              />
+            />
             <TextInput
               style={styles.textInput}
               placeholderTextColor={"gray"}
               placeholder="Confirm Password"
               value={user.confirmPassword}
-              onChangeText={(text) => setUser({ ...user, confirmPassword: text })}
+              onChangeText={(text) =>
+                setUser({ ...user, confirmPassword: text })
+              }
               secureTextEntry={true}
             />
           </View>
@@ -131,15 +142,6 @@ export default function RegisterScreen({ navigation }) {
           </View>
         </View>
       </ImageBackground>
-      <Text
-        style={{
-          color: "white",
-          textAlign: "center",
-          padding: 20,
-        }}
-      >
-        {JSON.stringify(user,2)}
-      </Text>
     </View>
   );
 }

@@ -47,15 +47,43 @@ export const getUserByEmail = async (email) => {
   }
 };
 
-export const toggleUserPrivacy = async (userId,isPrivate) => {
+export const toggleUserPrivacy = async (userId, isPrivate) => {
   try {
-
     const response = await axios.put(`${API_URL}/users/userPrivacy/${userId}`, {
       isPrivate: isPrivate,
     });
     return response.data;
-  } catch (error) {
-    
-  }
+  } catch (error) {}
+};
 
-}
+export const checkAccessibilityAndGetUserPost = async (userId, profileId) => {
+  try {
+    const res = await axios.get(`${API_URL}/users/profile/getUserPost`, {
+      params: {
+        userId: userId,
+        profileId: profileId,
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching user posts:", error.message);
+  }
+};
+
+export const getFollowers = async (userId) => {
+  try {
+    const res = await axios.get(`${API_URL}/users/followers/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching user posts:", error.message);
+  }
+};
+
+export const getFollowings = async (userId) => {
+  try {
+    const res = await axios.get(`${API_URL}/users/followings/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching user posts:", error.message);
+  }
+};

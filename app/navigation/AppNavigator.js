@@ -10,6 +10,7 @@ import FollowersAndFollowingScreen from "../screens/FollowersAndFollowingScreen"
 import ProfileScreen from "../screens/ProfileScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUserById } from "../services/userService";
+import Notifications from "../screens/Notifications";
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -75,6 +76,13 @@ const AppNavigator = () => {
           tabBarStyle: { display: "none" },
           headerShown: false,
         }}
+      />
+      <Stack.Screen
+        name = "Notifications"
+        component={Notifications}
+        // options={{
+        //   headerShown:false
+        // }}
       />
     </Stack.Navigator>
   );

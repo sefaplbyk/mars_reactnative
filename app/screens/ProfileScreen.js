@@ -9,21 +9,26 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  RefreshControl,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "../config";
 import { Ionicons } from "@expo/vector-icons";
 import SettingsModal from "../components/settings/SettingsModal";
 import { getProfilePic } from "../utils/profilePicUtils";
-import { getUserById } from "../services/userService";
+import {
+  checkAccessibilityAndGetUserPost,
+  getUserById,
+} from "../services/userService";
 import Icon from "react-native-vector-icons/Ionicons";
 import Post from "../components/post/Post";
-import { getUserPosts } from "../services/postService";
+import { getLoggedInUserPosts } from "../services/postService";
 import { formatDate } from "../utils/formatDate";
 import Screen from "../components/layout/Screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sendFollowReq } from "../services/requestService";
 
 const ProfileScreen = ({ route }) => {
   const { user } = useAuth();
@@ -32,6 +37,15 @@ const ProfileScreen = ({ route }) => {
   const [userData, setUserData] = useState({});
   const [postsData, setPostsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(
+    !(
+      route.params?.id &&
+      route.params?.id !== (user.luid ? user.luid : user._id)
+    )
+  );
+  const [refreshing, setRefreshing] = useState(false);
+
   const getUser = async () => {
     try {
       setLoading(true);
@@ -43,10 +57,10 @@ const ProfileScreen = ({ route }) => {
       setLoading(false);
     }
   };
-  const getPost = async () => {
+  const getLoggedUserPost = async () => {
     try {
       setLoading(true);
-      const userPosts = await getUserPosts(userId);
+      const userPosts = await getLoggedInUserPosts(userId);
       setPostsData(userPosts);
     } catch (error) {
       console.log(error, "errorFetchUserPost");
@@ -54,10 +68,66 @@ const ProfileScreen = ({ route }) => {
       setLoading(false);
     }
   };
+
+  const getUserPost = async () => {
+    try {
+      setLoading(true);
+      const userPosts = await checkAccessibilityAndGetUserPost(
+        user.luid ? user.luid : user._id,
+        userId
+      );
+      setPostsData(userPosts);
+    } catch (error) {
+      console.log(error, "errorFetchUserPost");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchUserData = async () => {
+    if (isOwnProfile) {
+      //Get my post
+      await getLoggedUserPost();
+    } else {
+      //get user Post
+      await getUserPost();
+    }
+    await getUser();
+  };
   useEffect(() => {
-    getUser();
-    getPost();
+    fetchUserData();
   }, [userId]);
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchUserData();
+    setTimeout(() => {
+      // Yenileme tamamlandıktan sonra 'refreshing' durumunu false yapın
+      setRefreshing(false);
+    }, 2000); // 2 saniye simülasyonu
+  };
+  const checkIfFollowing = async () => {
+    const isFollowing = await checkIfUserIsFollowing(userId);
+    setIsFollowing(isFollowing);
+  };
+  const handleEditProfile = () => {
+    if (isOwnProfile) {
+      navigation.navigate("EditProfile");
+    }
+  };
+
+  const handleFollow = async () => {
+    // Takip etme fonksiyonu
+    const info = await sendFollowReq(user.luid ? user.luid : user._id, userId);
+    console.log(info);
+    // followUser(userId);
+    // setIsFollowing(true);
+  };
+
+  const handleUnfollow = () => {
+    // Takipten çıkma fonksiyonu
+    unfollowUser(userId);
+    setIsFollowing(false);
+  };
+
   if (loading) {
     return (
       <Screen>
@@ -79,8 +149,15 @@ const ProfileScreen = ({ route }) => {
       item={item}
     />
   );
+  console.log(userData);
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.header}>
         <Icon
           name="chevron-back"
@@ -89,7 +166,7 @@ const ProfileScreen = ({ route }) => {
           onPress={() => navigation.goBack()}
         />
         <Text style={styles.username}>{userData?.username}</Text>
-        <SettingsModal user={user} />
+        <SettingsModal user={userData} />
       </View>
       <View style={styles.profileSection}>
         <View style={styles.profileHeader}>
@@ -103,9 +180,11 @@ const ProfileScreen = ({ route }) => {
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <Pressable
+              // disabled={true}
               onPress={() =>
                 navigation.navigate("FollowersAndFollowingScreen", {
-                  username: userData?.fullName,
+                  username: userData?.fullname,
+                  id: userId,
                 })
               }
               style={styles.statItem}
@@ -114,6 +193,7 @@ const ProfileScreen = ({ route }) => {
               <Text style={styles.statLabel}>Followers</Text>
             </Pressable>
             <Pressable
+              disabled={!postsData?.accessibility}
               onPress={() =>
                 navigation.navigate("FollowersAndFollowingScreen", {
                   username: userData?.fullName,
@@ -121,7 +201,7 @@ const ProfileScreen = ({ route }) => {
               }
               style={styles.statItem}
             >
-              <Text style={styles.statNumber}>{userData?.followingCount}</Text>
+              <Text style={styles.statNumber}>{userData?.followingsCount}</Text>
               <Text style={styles.statLabel}>Following</Text>
             </Pressable>
           </View>
@@ -133,22 +213,27 @@ const ProfileScreen = ({ route }) => {
         </View>
 
         <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => navigation.navigate("EditProfile")}
-          >
-            <Text style={styles.buttonText}>Edit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.shareButton}>
-            <Ionicons
-              name="share-social-outline"
-              size={20}
-              color={COLORS.white}
-            />
-          </TouchableOpacity>
+          {isOwnProfile ? (
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={handleEditProfile}
+            >
+              <Text style={styles.buttonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          ) : isFollowing ? (
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={handleUnfollow}
+            >
+              <Text style={styles.buttonText}>Takipten Çık</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.editButton} onPress={handleFollow}>
+              <Text style={styles.buttonText}>Takip Et</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-
       <FlatList
         data={postsData}
         renderItem={renderPostItem}
@@ -156,7 +241,18 @@ const ProfileScreen = ({ route }) => {
         scrollEnabled={false}
         contentContainerStyle={styles.postsContainer}
       />
-      {postsData.length === 0 && (
+      {userData.isPrivate && route.params?.id && (
+        <Text
+          style={{
+            color: COLORS.white,
+            textAlign: "center",
+            fontSize: 24,
+          }}
+        >
+          Bu Hesap Gizlidir, Postları görmek için takip ediniz.
+        </Text>
+      )}
+      {postsData?.length === 0 && (
         <Text
           style={{
             color: COLORS.white,
@@ -175,7 +271,7 @@ const ProfileScreen = ({ route }) => {
             fontSize: 20,
           }}
         >
-          {postsData.length === 0 &&
+          {postsData?.length === 0 &&
             (userId === (user.luid ? user.luid : user._id)
               ? "Post paylaşmak için tıklayın."
               : "")}

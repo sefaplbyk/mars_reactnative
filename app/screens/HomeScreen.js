@@ -6,6 +6,7 @@ import { getAllPosts } from "../services/postService";
 import { COLORS } from "../config";
 import { formatDate } from "../utils/formatDate";
 
+
 const HomeScreen = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +14,6 @@ const HomeScreen = () => {
   useEffect(() => {
     fetchPosts();
   }, []);
-
   const fetchPosts = async () => {
     try {
       setLoading(true);

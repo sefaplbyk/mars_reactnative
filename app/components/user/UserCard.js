@@ -1,14 +1,32 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, Pressable } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Image,
+  Pressable,
+} from "react-native";
 import React from "react";
 import { COLORS } from "../../config";
 import { getProfilePic } from "../../utils/profilePicUtils";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../../context/AuthContext";
+import { sendFollowReq } from "../../services/requestService";
 
-const UserCard = ({username, email, profilePicture,id}) => {
-  const navigation = useNavigation()
+const UserCard = ({ username, email, profilePicture, id }) => {
+  const { user } = useAuth();
+  console.log(user)
+  const userId = user._id || user.luid;
+  // const userId = user.luid ? user.luid : user._id
+  const navigation = useNavigation();
+
+  const handleFollow = async () => {
+    await sendFollowReq(userId, id);
+  };
+
   return (
     <Pressable
-    onPress={() => navigation.navigate("UserProfile", { id })}
+      onPress={() => navigation.navigate("UserProfile", { id })}
       style={{
         borderWidth: 1,
         backgroundColor: "rgba(0,0,0,0.7)",
@@ -56,7 +74,7 @@ const UserCard = ({username, email, profilePicture,id}) => {
           width: "80%",
           borderRadius: 10,
         }}
-        onPress={() => console.log("first")}
+        onPress={handleFollow}
       >
         <Text
           style={{

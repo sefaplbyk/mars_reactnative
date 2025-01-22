@@ -1,9 +1,18 @@
-import { StyleSheet, Text, View, FlatList, Image, TouchableOpacity } from 'react-native'
-import React, { useState } from 'react'
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs'
-import { COLORS } from '../config'
-import { Ionicons } from '@expo/vector-icons'
-import { useNavigation } from '@react-navigation/native'
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import { COLORS } from "../config";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { getFollowers, getFollowings } from "../services/userService";
+import { getProfilePic } from "../utils/profilePicUtils";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -126,12 +135,12 @@ const mockFollowing = [
 ];
 
 const Header = ({ username }) => {
-  const navigation = useNavigation()
-  
+  const navigation = useNavigation();
+
   return (
     <View style={styles.header}>
-      <TouchableOpacity 
-        onPress={() => navigation.goBack()} 
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
         style={styles.backButton}
       >
         <Ionicons name="chevron-back" size={28} color={COLORS.black} />
@@ -139,15 +148,16 @@ const Header = ({ username }) => {
       <Text style={styles.headerTitle}>{username}</Text>
       <View style={styles.rightPlaceholder} />
     </View>
-  )
-}
+  );
+};
 
 const UserCard = ({ user, onToggleFollow }) => {
+  console.log(user,"user")
   return (
     <View style={styles.userCard}>
-      <Image source={{ uri: user.avatar }} style={styles.avatar} />
+      <Image source={getProfilePic(user.profilePicture)} style={styles.avatar} />
       <View style={styles.userInfo}>
-        <Text style={styles.name}>{user.name}</Text>
+        <Text style={styles.name}>{user.fullname}</Text>
         <Text style={styles.username}>{user.username}</Text>
         <Text style={styles.bio} numberOfLines={2}>
           {user.bio}
@@ -173,13 +183,17 @@ const UserCard = ({ user, onToggleFollow }) => {
   );
 };
 
-const UserList = ({ type }) => {
-  const [users, setUsers] = useState(type === 'followers' ? mockFollowers : mockFollowing);
+const UserList = ({ type,usersData }) => {
+  const [users, setUsers] = useState(
+    type === "followers" ? usersData.followers : usersData.followings
+  );
 
   const handleToggleFollow = (userId) => {
     setUsers(
       users.map((user) =>
-        user.luid === userId ? { ...user, isFollowing: !user.isFollowing } : user
+        user.luid === userId
+          ? { ...user, isFollowing: !user.isFollowing }
+          : user
       )
     );
   };
@@ -187,7 +201,7 @@ const UserList = ({ type }) => {
   return (
     <FlatList
       data={users}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item) => item._id}
       renderItem={({ item }) => (
         <UserCard user={item} onToggleFollow={handleToggleFollow} />
       )}
@@ -196,27 +210,42 @@ const UserList = ({ type }) => {
   );
 };
 
-const FollowersScreen = () => <UserList type="followers" />
-const FollowingScreen = () => <UserList type="following" />
-
 const FollowersAndFollowingScreen = ({ route }) => {
-  const { username = "John Doe" } = route.params || {}
-  
+  const [followers, setFollowers] = useState([]);
+  const [followings, setFollowings] = useState([]);
+  const { username = "John Doe", id } = route.params || {};
+  useEffect(() => {
+    const fetchUser = async () => {
+      const followers = await getFollowers(id);
+      setFollowers(followers);
+      const followings = await getFollowings(id);
+      setFollowings(followings);
+    };
+
+    fetchUser();
+  }, []);
+  console.log(followers, "followers fe");
+  console.log(followings, "followings fe");
+
+  const FollowersScreen = () => (
+    <UserList type="followers" usersData={{ followers, followings }} />
+  );
+  const FollowingScreen = () => <UserList type="following" usersData={{ followers, followings }}/>;
   return (
     <View style={styles.container}>
       <Header username={username} />
       <Tab.Navigator
         screenOptions={{
           tabBarIndicatorStyle: { backgroundColor: COLORS.primary, height: 3 },
-          tabBarLabelStyle: { 
-            fontWeight: 'bold', 
-            textTransform: 'none',
-            fontSize: 14
+          tabBarLabelStyle: {
+            fontWeight: "bold",
+            textTransform: "none",
+            fontSize: 14,
           },
-          tabBarStyle: { 
-            elevation: 0, 
+          tabBarStyle: {
+            elevation: 0,
             shadowOpacity: 0,
-            backgroundColor: COLORS.white 
+            backgroundColor: COLORS.white,
           },
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.gray,
@@ -225,19 +254,19 @@ const FollowersAndFollowingScreen = ({ route }) => {
         <Tab.Screen
           name="Followers"
           component={FollowersScreen}
-          options={{ tabBarLabel: "Followers " + (mockFollowers.length) }}
+          options={{ tabBarLabel: "Followers " + followers.length }}
         />
         <Tab.Screen
           name="Following"
           component={FollowingScreen}
-          options={{ tabBarLabel: "Following " + (mockFollowing.length) }}
+          options={{ tabBarLabel: "Following " + followings.length }}
         />
       </Tab.Navigator>
     </View>
-  )
-}
+  );
+};
 
-export default FollowersAndFollowingScreen
+export default FollowersAndFollowingScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -245,9 +274,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     height: 56,
     paddingHorizontal: 16,
     backgroundColor: COLORS.white,
@@ -257,15 +286,15 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.black,
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
   },
   rightPlaceholder: {
     width: 40,
@@ -275,11 +304,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
   },
   userCard: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
     backgroundColor: COLORS.white,
     marginVertical: 0.5,
-    alignItems: 'center',
+    alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray2,
   },
@@ -295,7 +324,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.black,
   },
   username: {
@@ -314,7 +343,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: COLORS.primary,
     minWidth: 100,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 1,
   },
   followingButton: {
@@ -325,9 +354,9 @@ const styles = StyleSheet.create({
   followButtonText: {
     color: COLORS.white,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   followingButtonText: {
     color: COLORS.primary,
   },
-})
+});

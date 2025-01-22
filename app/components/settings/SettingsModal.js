@@ -13,13 +13,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../config";
 import { useAuth } from "../../context/AuthContext";
 import { toggleUserPrivacy } from "../../services/userService";
+import { useNavigation } from "@react-navigation/native";
 
 const SettingsModal = ({ user }) => {
   const { logout } = useAuth();
-
+  const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
-
-  const [isPrivate, setIsPrivate] = useState(user.isPrivate);
+  const [isPrivate, setIsPrivate] = useState(user?.isPrivate);
   const userId = user.luid ? user.luid : user._id;
 
   const togglePrivacy = () => {
@@ -64,7 +64,12 @@ const SettingsModal = ({ user }) => {
                 <Text style={styles.menuText}>Profile</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() =>
+                  navigation.navigate("Notifications", { userId: userId })
+                }
+              >
                 <Ionicons
                   name="notifications-outline"
                   size={24}

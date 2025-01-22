@@ -45,7 +45,7 @@ export const getAllPosts = async () => {
     throw error;
   }
 };
-export const getUserPosts = async (userId) => {
+export const getLoggedInUserPosts = async (userId) => {
   try {
     const response = await axios.get(`${API_URL}/posts/${userId}`);
     return response.data;
