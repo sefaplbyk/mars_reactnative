@@ -9,6 +9,8 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { Image } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import EducationScreen from "../screens/EducationScreen";
+import ChatBotNavigator from "./ChatBotNavigator";
 
 const Tab = createBottomTabNavigator();
 export default function HomeNavigator() {
@@ -59,11 +61,25 @@ export default function HomeNavigator() {
           headerRight: () => (
             <Icon
               color={"white"}
-              name="chatbox"
+              name="chatbox-ellipses-outline"
               size={24}
               onPress={() => navigation.navigate("ChatNavigator")}
             />
           ),
+        }}
+      />
+      
+      <Tab.Screen
+        name="Education"
+        component={ChatBotNavigator}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ color, size, focused }) =>
+            focused ? (
+              <Icon color={"white"} name="barcode-sharp" size={24} />
+            ) : (
+              <Icon color={"white"} name="barcode-outline" size={24} />
+            ),
         }}
       />
       <Tab.Screen

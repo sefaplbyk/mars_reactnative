@@ -43,13 +43,14 @@ const PostDetailScreen = ({ route }) => {
   const [textShown, setTextShown] = useState(false);
   const [lengthMore, setLengthMore] = useState(false);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     fetchPost();
   }, [postId]);
 
   useEffect(() => {
-    fetchComments();
+    if (post) {
+      fetchComments();
+    }
   }, [post]);
 
   const toggleNumberOfLines = () => {
@@ -117,6 +118,7 @@ const PostDetailScreen = ({ route }) => {
             </Text>
             <Text style={styles.commentTime}>{formatDate(item.createdAt)}</Text>
           </View>
+
           <Text style={styles.commentText}>{item.content}</Text>
         </View>
       </View>
@@ -147,6 +149,7 @@ const PostDetailScreen = ({ route }) => {
           </View>
           {/* <Text style={styles.postContent}>{post.title}</Text> */}
           <ScrollView style={{ maxHeight: 200 }}>
+
             <Text
               onTextLayout={onTextLayout}
               numberOfLines={textShown ? undefined : 5}
@@ -154,6 +157,18 @@ const PostDetailScreen = ({ route }) => {
             >
               {post.content}
             </Text>
+            {post.imageUrl && (
+              <Image
+                source={{
+                  uri: post?.imageUrl,
+                }}
+                resizeMode="cover"
+                style={{
+                  width: 250,
+                  height: 250
+                }}
+              />
+            )}
           </ScrollView>
           {lengthMore ? (
             <Text

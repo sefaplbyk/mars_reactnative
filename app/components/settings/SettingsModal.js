@@ -20,7 +20,7 @@ const SettingsModal = ({ user }) => {
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
   const [isPrivate, setIsPrivate] = useState(user?.isPrivate);
-  const userId = user.luid ? user.luid : user._id;
+  const userId = user.luid || user._id;
 
   const togglePrivacy = () => {
     setIsPrivate((prev) => !prev);

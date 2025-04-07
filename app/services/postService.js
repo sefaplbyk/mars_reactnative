@@ -15,6 +15,7 @@ export const createPost = async (postData) => {
         title: postData.title,
         content: postData.content,
         authorId: postData.authorId,
+        imageUrl: postData.imageUrl,
       },
       {
         headers: {

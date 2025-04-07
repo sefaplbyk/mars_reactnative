@@ -35,7 +35,6 @@ const HomeScreen = () => {
   }
 
   const renderPostItem = ({ item }) => {
-
     return (
       <Post
         postId={item.id}
@@ -45,6 +44,7 @@ const HomeScreen = () => {
         userProfilePic={item.userProfilePic}
         content={item.content}
         likes={item.likes}
+        imageUrl = {item.imageUrl || ""}
         commentsCount={item.commentsCount || 0}
         date={formatDate(item.date)}
         item={item}

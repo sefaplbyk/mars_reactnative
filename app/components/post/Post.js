@@ -8,12 +8,13 @@ import { togglePostLike } from "../../services/postService";
 import { useAuth } from "../../context/AuthContext";
 
 const Post = ({
-  postAuthorId,
   postId,
+  postAuthorId,
   userName,
   userEmail,
   userProfilePic,
   content,
+  imageUrl,
   commentsCount,
   likes,
   date,
@@ -46,147 +47,148 @@ const Post = ({
   };
   return (
     <View style={styles.postContainer}>
-      {/* Post Left  */}
-      <Pressable
-        onPress={() => navigation.navigate("UserProfile", { id: postAuthorId })}
-      >
-        <Image
-          source={getProfilePic(userProfilePic)}
-          style={styles.userProfilePhoto}
-        />
-      </Pressable>
-      {/* Post Right */}
-      <View style={styles.postRight}>
-        <Pressable
-          onPress={() =>
-            navigation.navigate("UserProfile", { id: postAuthorId })
-          }
-          style={styles.postHeader}
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <Pressable 
+          style={styles.userInfo}
+          onPress={() => navigation.navigate("UserProfile", { id: postAuthorId })}
         >
-          <Text style={styles.userName}>{userName}</Text>
-          <Text style={styles.userEmail}>{userEmail}</Text>
+          <Image
+            source={getProfilePic(userProfilePic)}
+            style={styles.avatar}
+          />
+          <View style={styles.userTexts}>
+            <Text style={styles.userName}>{userName}</Text>
+            <Text style={styles.userEmail}>{userEmail}</Text>
+          </View>
         </Pressable>
-        <Pressable onPress={handlePostDetail}>
-          <Text
+        <Text style={styles.dateText}>{date}</Text>
+      </View>
+
+      {/* Content Section */}
+      <Pressable onPress={handlePostDetail}>
+        {/* Text Content */}
+        {content && (
+          <Text 
+            style={[
+              styles.contentText,
+              imageUrl ? { marginBottom: 12 } : null
+            ]} 
+            numberOfLines={textShown ? undefined : 3}
             onTextLayout={onTextLayout}
-            numberOfLines={textShown ? undefined : 2}
-            style={styles.postContent}
           >
             {content}
           </Text>
-
-          {lengthMore ? (
-            <Text
-              onPress={toggleNumberOfLines}
-              style={{
-                lineHeight: 21,
-                color: "gray",
-                fontWeight: "bold",
-                textAlign: "right",
-              }}
-            >
-              {textShown ? "Read less..." : "Read more..."}
-            </Text>
-          ) : null}
-          {/* <Text style={styles.postContent}>{content}</Text> */}
-        </Pressable>
-        {/* Actions */}
-        <View style={styles.actions}>
-          <View style={{ flexDirection: "row", gap: 20 }}>
-            <Pressable onPress={handlePostDetail} style={styles.actionItem}>
-              <Icon name="chatbubble-outline" color={COLORS.white} size={24} />
-              <Text style={styles.actionText}>{commentsCount}</Text>
-            </Pressable>
-
-            <View style={styles.actionItem}>
-              {liked ? (
-                <Icon
-                  name="heart-sharp"
-                  color={COLORS.white}
-                  size={24}
-                  onPress={handlePressLike}
-                />
-              ) : (
-                <Icon
-                  name="heart-outline"
-                  color={COLORS.white}
-                  size={24}
-                  onPress={handlePressLike}
-                />
-              )}
-              <Text style={styles.actionText}>{likesLength}</Text>
-            </View>
+        )}
+        
+        {/* Image Content */}
+        {imageUrl && (
+          <View style={styles.imageWrapper}>
+            <Image 
+              source={{ uri: imageUrl }} 
+              style={styles.postImage}
+              resizeMode="contain"
+            />
           </View>
-          <Text style={styles.postDate}>{date}</Text>
-        </View>
+        )}
+      </Pressable>
+
+      {/* Actions Section */}
+      <View style={styles.actionsContainer}>
+        <Pressable onPress={handlePostDetail} style={styles.actionButton}>
+          <Icon name="chatbubble-outline" color={COLORS.white} size={22} />
+          <Text style={styles.actionText}>{commentsCount}</Text>
+        </Pressable>
+
+        <Pressable onPress={handlePressLike} style={styles.actionButton}>
+          <Icon
+            name={liked ? "heart" : "heart-outline"}
+            color={liked ? COLORS.primary : COLORS.white}
+            size={22}
+          />
+          <Text style={styles.actionText}>{likesLength}</Text>
+        </Pressable>
       </View>
-      <View style={styles.separator} />
     </View>
   );
 };
 
-export default Post;
 const styles = StyleSheet.create({
   postContainer: {
-    flexDirection: "row",
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    backgroundColor: "rgba(12,12,12,0.75)",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 15,
+    padding: 15,
   },
-  userProfilePhoto: {
-    width: 50,
-    height: 50,
+  headerSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
     borderWidth: 1,
-    borderColor: COLORS.white,
-    borderRadius: 25,
+    borderColor: COLORS.primary,
   },
-  postRight: {
-    paddingHorizontal: 10,
-    gap: 10,
-    flex: 1,
-  },
-  postHeader: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 6,
+  userTexts: {
+    justifyContent: 'center',
   },
   userName: {
     color: COLORS.white,
-    fontWeight: "bold",
-    fontSize: 16,
+    fontWeight: '600',
+    fontSize: 15,
   },
   userEmail: {
-    color: COLORS.white,
+    color: COLORS.gray,
     fontSize: 12,
   },
-  postContent: {
+  dateText: {
+    color: COLORS.gray,
+    fontSize: 12,
+  },
+  contentText: {
     color: COLORS.white,
-    paddingRight: 10,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 20,
+  imageWrapper: {
+    width: '100%',
+    height: 250,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginVertical: 8,
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
-  actionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
+  postImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius:20
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 20,
+    padding: 5,
   },
   actionText: {
     color: COLORS.white,
-  },
-  postDate: {
-    color: "gray",
-    fontSize: 12,
-    textAlign: "right",
-  },
-  separator: {
-    position: "absolute",
-    borderWidth: 0.25,
-    borderColor: COLORS.white,
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
+    marginLeft: 5,
+    fontSize: 14,
+  }
 });
+
+export default Post;
