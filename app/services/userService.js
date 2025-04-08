@@ -7,14 +7,14 @@ export const getAllUsers = async () => {
   try {
     const response = await axios.get(`${API_URL}/users/all/${userId}`);
     return response.data;
-  } catch (error) {}
+  } catch (error) { }
 };
 
 export const getUserById = async (id) => {
   try {
     const response = await axios.get(`${API_URL}/users/${id}`);
     return response.data;
-  } catch (error) {}
+  } catch (error) { }
 };
 
 export const getUserByEmail = async (email) => {
@@ -53,7 +53,7 @@ export const toggleUserPrivacy = async (userId, isPrivate) => {
       isPrivate: isPrivate,
     });
     return response.data;
-  } catch (error) {}
+  } catch (error) { }
 };
 
 export const checkAccessibilityAndGetUserPost = async (userId, profileId) => {
@@ -85,5 +85,21 @@ export const getFollowings = async (userId) => {
     return res.data;
   } catch (error) {
     console.error("Error fetching user posts:", error.message);
+  }
+};
+
+export const updateUserProfile = async (userId, fullname, bio) => {
+  try {
+    const response = await axios.put(`${API_URL}/users/profile/update/${userId}`, {
+      fullname,
+      bio,
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data || error.message
+    };
   }
 };

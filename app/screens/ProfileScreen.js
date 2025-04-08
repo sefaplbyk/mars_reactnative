@@ -10,6 +10,9 @@ import {
   Alert,
   Pressable,
   RefreshControl,
+  TextInput,
+  Modal,
+  Button,
 } from "react-native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -27,8 +30,8 @@ import Post from "../components/post/Post";
 import { getLoggedInUserPosts } from "../services/postService";
 import { formatDate } from "../utils/formatDate";
 import Screen from "../components/layout/Screen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sendFollowReq } from "../services/requestService";
+import EditProfileModal from "../components/profile/EditProfileModal";
 
 const ProfileScreen = ({ route }) => {
   const { user } = useAuth();
@@ -45,6 +48,7 @@ const ProfileScreen = ({ route }) => {
     )
   );
   const [refreshing, setRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const getUser = async () => {
     try {
@@ -108,11 +112,6 @@ const ProfileScreen = ({ route }) => {
     const isFollowing = await checkIfUserIsFollowing(userId);
     setIsFollowing(isFollowing);
   };
-  const handleEditProfile = () => {
-    if (isOwnProfile) {
-      navigation.navigate("EditProfile");
-    }
-  };
 
   const handleFollow = async () => {
     // Takip etme fonksiyonu
@@ -149,7 +148,6 @@ const ProfileScreen = ({ route }) => {
       item={item}
     />
   );
-  console.log(userData);
 
   return (
     <ScrollView
@@ -216,8 +214,9 @@ const ProfileScreen = ({ route }) => {
           {isOwnProfile ? (
             <TouchableOpacity
               style={styles.editButton}
-              onPress={handleEditProfile}
+              onPress={() => setModalVisible(true)}
             >
+              <EditProfileModal userData={userData} modalVisible={modalVisible} setModalVisible={setModalVisible} setUserData={setUserData} />
               <Text style={styles.buttonText}>Edit Profile</Text>
             </TouchableOpacity>
           ) : isFollowing ? (
@@ -281,7 +280,7 @@ const ProfileScreen = ({ route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "black",
@@ -341,8 +340,8 @@ const styles = StyleSheet.create({
   },
   bio: {
     color: COLORS.white,
-    fontSize: 14,
-    marginTop: 5,
+    fontSize: 12,
+    marginTop: 15,
   },
   website: {
     color: "#3897f0",
@@ -385,6 +384,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+
 });
 
 export default ProfileScreen;
