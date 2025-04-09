@@ -7,23 +7,20 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
-  TextInput,
-  Modal,
-  Button,
 } from "react-native";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "../config";
-import { Ionicons } from "@expo/vector-icons";
 import SettingsModal from "../components/settings/SettingsModal";
 import { getProfilePic } from "../utils/profilePicUtils";
 import {
   checkAccessibilityAndGetUserPost,
+  getFollowings,
   getUserById,
+  unfollowUser
 } from "../services/userService";
 import Icon from "react-native-vector-icons/Ionicons";
 import Post from "../components/post/Post";
@@ -37,103 +34,86 @@ const ProfileScreen = ({ route }) => {
   const { user } = useAuth();
   const navigation = useNavigation();
   const userId = route.params?.id || (user.luid ? user.luid : user._id);
+
   const [userData, setUserData] = useState({});
   const [postsData, setPostsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [isOwnProfile, setIsOwnProfile] = useState(
-    !(
-      route.params?.id &&
-      route.params?.id !== (user.luid ? user.luid : user._id)
-    )
-  );
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const getUser = async () => {
+  const isOwnProfile =
+    !route.params?.id || route.params?.id === (user.luid || user._id);
+
+  const fetchUser = async () => {
     try {
-      setLoading(true);
       const userProfile = await getUserById(userId);
       setUserData(userProfile);
     } catch (error) {
       console.log(error, "errorFetchUser");
-    } finally {
-      setLoading(false);
-    }
-  };
-  const getLoggedUserPost = async () => {
-    try {
-      setLoading(true);
-      const userPosts = await getLoggedInUserPosts(userId);
-      setPostsData(userPosts);
-    } catch (error) {
-      console.log(error, "errorFetchUserPost");
-    } finally {
-      setLoading(false);
     }
   };
 
-  const getUserPost = async () => {
+  const fetchPosts = async () => {
     try {
-      setLoading(true);
-      const userPosts = await checkAccessibilityAndGetUserPost(
-        user.luid ? user.luid : user._id,
-        userId
-      );
-      setPostsData(userPosts);
+      const posts = isOwnProfile
+        ? await getLoggedInUserPosts(userId)
+        : await checkAccessibilityAndGetUserPost(user._id, userId);
+      setPostsData(posts);
     } catch (error) {
       console.log(error, "errorFetchUserPost");
-    } finally {
-      setLoading(false);
     }
   };
+
+  const checkIfFollowing = async () => {
+    try {
+      const followings = await getFollowings(user._id);
+      const isFollowingUser = followings.some((f) => f._id === userId);
+      setIsFollowing(isFollowingUser);
+    } catch (err) {
+      console.log("Takip kontrolü başarısız:", err);
+    }
+  };
+
   const fetchUserData = async () => {
-    if (isOwnProfile) {
-      //Get my post
-      await getLoggedUserPost();
-    } else {
-      //get user Post
-      await getUserPost();
+    setLoading(true);
+    await fetchUser();
+    await fetchPosts();
+    if (!isOwnProfile) {
+      await checkIfFollowing();
     }
-    await getUser();
+    setLoading(false);
   };
+
   useEffect(() => {
     fetchUserData();
   }, [userId]);
+
   const onRefresh = () => {
     setRefreshing(true);
-    fetchUserData();
-    setTimeout(() => {
-      // Yenileme tamamlandıktan sonra 'refreshing' durumunu false yapın
-      setRefreshing(false);
-    }, 2000); // 2 saniye simülasyonu
-  };
-  const checkIfFollowing = async () => {
-    const isFollowing = await checkIfUserIsFollowing(userId);
-    setIsFollowing(isFollowing);
+    fetchUserData().finally(() => setRefreshing(false));
   };
 
   const handleFollow = async () => {
-    // Takip etme fonksiyonu
-    const info = await sendFollowReq(user.luid ? user.luid : user._id, userId);
-    console.log(info);
-    // followUser(userId);
-    // setIsFollowing(true);
+    try {
+      const info = await sendFollowReq(user._id, userId);
+      console.log(info, "info");
+      await checkIfFollowing();
+    } catch (err) {
+      console.log("Takip isteği gönderilemedi:", err);
+    }
   };
 
-  const handleUnfollow = () => {
-    // Takipten çıkma fonksiyonu
-    unfollowUser(userId);
-    setIsFollowing(false);
+   const handleUnfollow = async () => {
+    console.log(user._id, userId,"user._id, userId")
+    try {
+      await unfollowUser(user._id, userId);
+      setIsFollowing(false);
+    } catch (err) {
+      console.log("Takipten çıkılamadı:", err);
+    }
   };
 
-  if (loading) {
-    return (
-      <Screen>
-        <ActivityIndicator size="large" color={COLORS.secondary} />
-      </Screen>
-    );
-  }
   const renderPostItem = ({ item }) => (
     <Post
       postId={item.id}
@@ -148,6 +128,14 @@ const ProfileScreen = ({ route }) => {
       item={item}
     />
   );
+
+  if (loading) {
+    return (
+      <Screen>
+        <ActivityIndicator size="large" color={COLORS.secondary} />
+      </Screen>
+    );
+  }
 
   return (
     <ScrollView
@@ -166,6 +154,7 @@ const ProfileScreen = ({ route }) => {
         <Text style={styles.username}>{userData?.username}</Text>
         <SettingsModal user={userData} />
       </View>
+
       <View style={styles.profileSection}>
         <View style={styles.profileHeader}>
           <Image
@@ -178,7 +167,7 @@ const ProfileScreen = ({ route }) => {
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <Pressable
-              // disabled={true}
+              disabled={!postsData?.accessibility}
               onPress={() =>
                 navigation.navigate("FollowersAndFollowingScreen", {
                   username: userData?.fullname,
@@ -191,10 +180,10 @@ const ProfileScreen = ({ route }) => {
               <Text style={styles.statLabel}>Followers</Text>
             </Pressable>
             <Pressable
-              disabled={!postsData?.accessibility}
               onPress={() =>
                 navigation.navigate("FollowersAndFollowingScreen", {
-                  username: userData?.fullName,
+                  username: userData?.fullname,
+                  id: userId,
                 })
               }
               style={styles.statItem}
@@ -216,7 +205,12 @@ const ProfileScreen = ({ route }) => {
               style={styles.editButton}
               onPress={() => setModalVisible(true)}
             >
-              <EditProfileModal userData={userData} modalVisible={modalVisible} setModalVisible={setModalVisible} setUserData={setUserData} />
+              <EditProfileModal
+                userData={userData}
+                modalVisible={modalVisible}
+                setModalVisible={setModalVisible}
+                setUserData={setUserData}
+              />
               <Text style={styles.buttonText}>Edit Profile</Text>
             </TouchableOpacity>
           ) : isFollowing ? (
@@ -233,6 +227,7 @@ const ProfileScreen = ({ route }) => {
           )}
         </View>
       </View>
+
       <FlatList
         data={postsData}
         renderItem={renderPostItem}
@@ -240,47 +235,26 @@ const ProfileScreen = ({ route }) => {
         scrollEnabled={false}
         contentContainerStyle={styles.postsContainer}
       />
+
       {userData.isPrivate && route.params?.id && (
-        <Text
-          style={{
-            color: COLORS.white,
-            textAlign: "center",
-            fontSize: 24,
-          }}
-        >
+        <Text style={styles.privateText}>
           Bu Hesap Gizlidir, Postları görmek için takip ediniz.
         </Text>
       )}
       {postsData?.length === 0 && (
-        <Text
-          style={{
-            color: COLORS.white,
-            textAlign: "center",
-          }}
-        >
-          Gösterilecek hiç post yok.
-        </Text>
+        <Text style={styles.noPosts}>Gösterilecek hiç post yok.</Text>
       )}
-      <Pressable onPress={() => navigation.navigate("AddPost")}>
-        <Text
-          style={{
-            color: COLORS.white,
-            textAlign: "center",
-            marginTop: 30,
-            fontSize: 20,
-          }}
-        >
-          {postsData?.length === 0 &&
-            (userId === (user.luid ? user.luid : user._id)
-              ? "Post paylaşmak için tıklayın."
-              : "")}
-        </Text>
-      </Pressable>
+
+      {postsData?.length === 0 && isOwnProfile && (
+        <Pressable onPress={() => navigation.navigate("AddPost")}>
+          <Text style={styles.addPostText}>Post paylaşmak için tıklayın.</Text>
+        </Pressable>
+      )}
     </ScrollView>
   );
 };
 
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "black",
@@ -343,11 +317,6 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 15,
   },
-  website: {
-    color: "#3897f0",
-    fontSize: 14,
-    marginTop: 5,
-  },
   buttonGroup: {
     flexDirection: "row",
     marginBottom: 15,
@@ -360,31 +329,30 @@ export const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: "center",
   },
-  shareButton: {
-    backgroundColor: COLORS.secondary,
-    padding: 8,
-    borderRadius: 6,
-    width: 40,
-    alignItems: "center",
-  },
   buttonText: {
     color: COLORS.white,
     fontWeight: "600",
   },
-
   postsContainer: {
     padding: 2,
   },
-  postContainer: {
-    flex: 1 / 3,
-    aspectRatio: 1,
-    padding: 2,
+  privateText: {
+    color: COLORS.white,
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 20,
   },
-  postImage: {
-    width: "100%",
-    height: "100%",
+  noPosts: {
+    color: COLORS.white,
+    textAlign: "center",
+    marginTop: 20,
   },
-
+  addPostText: {
+    color: COLORS.white,
+    textAlign: "center",
+    marginTop: 30,
+    fontSize: 20,
+  },
 });
 
 export default ProfileScreen;

@@ -19,7 +19,7 @@ const EditProfileModal = ({ modalVisible, setModalVisible, userData, setUserData
         if (result.success) {
             setUserData({
                 ...userData,
-                fullName: modalTempData.tempName,
+                fullname: modalTempData.tempName,
                 bio: modalTempData.tempBio
             });
             console.log("Profil başarıyla güncellendi:", result.data);

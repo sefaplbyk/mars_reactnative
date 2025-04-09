@@ -16,123 +16,7 @@ import { getProfilePic } from "../utils/profilePicUtils";
 
 const Tab = createMaterialTopTabNavigator();
 
-const mockFollowers = [
-  {
-    id: "1",
-    name: "Alex Thompson",
-    username: "@alexdev",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    bio: "Senior React Native Developer | Tech Lead @Microsoft",
-    isFollowing: false,
-  },
-  {
-    id: "2",
-    name: "Emma Wilson",
-    username: "@emmaw",
-    avatar: "https://randomuser.me/api/portraits/women/22.jpg",
-    bio: "UI/UX Designer | Previously @Apple | Coffee Addict ☕",
-    isFollowing: true,
-  },
-  {
-    id: "3",
-    name: "David Chen",
-    username: "@davidc",
-    avatar: "https://randomuser.me/api/portraits/men/45.jpg",
-    bio: "Full Stack Developer | AWS Certified | 🚀 Building cool stuff",
-    isFollowing: true,
-  },
-  {
-    id: "4",
-    name: "Sophia Martinez",
-    username: "@sophiatech",
-    avatar: "https://randomuser.me/api/portraits/women/28.jpg",
-    bio: "iOS Developer | Open Source Contributor | 📱",
-    isFollowing: false,
-  },
-  {
-    id: "5",
-    name: "James Wilson",
-    username: "@jwilson",
-    avatar: "https://randomuser.me/api/portraits/men/52.jpg",
-    bio: "Product Manager @Netflix | Tech Enthusiast",
-    isFollowing: true,
-  },
-  {
-    id: "6",
-    name: "Luna Kim",
-    username: "@lunakim",
-    avatar: "https://randomuser.me/api/portraits/women/42.jpg",
-    bio: "UX Researcher | PhD in HCI | Love designing experiences 🎨",
-    isFollowing: false,
-  },
-  {
-    id: "7",
-    name: "Marcus Johnson",
-    username: "@marcusj",
-    avatar: "https://randomuser.me/api/portraits/men/36.jpg",
-    bio: "Backend Developer | Python & Node.js | 🎮 Gamer",
-    isFollowing: true,
-  },
-  {
-    id: "8",
-    name: "Olivia Brown",
-    username: "@oliviab",
-    avatar: "https://randomuser.me/api/portraits/women/15.jpg",
-    bio: "Frontend Engineer @Google | React Expert | 🎯",
-    isFollowing: false,
-  },
-  {
-    id: "9",
-    name: "Daniel Lee",
-    username: "@danlee",
-    avatar: "https://randomuser.me/api/portraits/men/68.jpg",
-    bio: "Mobile App Developer | Flutter & React Native | 🌟",
-    isFollowing: true,
-  },
-  {
-    id: "10",
-    name: "Isabella Garcia",
-    username: "@isabellag",
-    avatar: "https://randomuser.me/api/portraits/women/33.jpg",
-    bio: "DevOps Engineer | Cloud Architecture | ☁️",
-    isFollowing: false,
-  },
-];
 
-const mockFollowing = [
-  {
-    id: "1",
-    name: "Sarah Connor",
-    username: "@sconnor",
-    avatar: "https://randomuser.me/api/portraits/women/91.jpg",
-    bio: "AI Researcher | Machine Learning Expert | 🤖",
-    isFollowing: true,
-  },
-  {
-    id: "2",
-    name: "Michael Zhang",
-    username: "@mzhang",
-    avatar: "https://randomuser.me/api/portraits/men/72.jpg",
-    bio: "Software Architect | Cloud Native | k8s enthusiast 🚀",
-    isFollowing: true,
-  },
-  {
-    id: "3",
-    name: "Emily Parker",
-    username: "@emilyp",
-    avatar: "https://randomuser.me/api/portraits/women/55.jpg",
-    bio: "Product Designer | Figma Expert | Design Systems 🎨",
-    isFollowing: true,
-  },
-  {
-    id: "13",
-    name: "Chris Anderson",
-    username: "@chris_a",
-    avatar: "https://randomuser.me/api/portraits/men/92.jpg",
-    bio: "Security Engineer | Blockchain Developer | 🔒",
-    isFollowing: true,
-  },
-];
 
 const Header = ({ username }) => {
   const navigation = useNavigation();
@@ -213,7 +97,7 @@ const UserList = ({ type,usersData }) => {
 const FollowersAndFollowingScreen = ({ route }) => {
   const [followers, setFollowers] = useState([]);
   const [followings, setFollowings] = useState([]);
-  const { username = "John Doe", id } = route.params || {};
+  const { username , id } = route.params ;
   useEffect(() => {
     const fetchUser = async () => {
       const followers = await getFollowers(id);
@@ -224,9 +108,6 @@ const FollowersAndFollowingScreen = ({ route }) => {
 
     fetchUser();
   }, []);
-  console.log(followers, "followers fe");
-  console.log(followings, "followings fe");
-
   const FollowersScreen = () => (
     <UserList type="followers" usersData={{ followers, followings }} />
   );
@@ -254,12 +135,12 @@ const FollowersAndFollowingScreen = ({ route }) => {
         <Tab.Screen
           name="Followers"
           component={FollowersScreen}
-          options={{ tabBarLabel: "Followers " + followers.length }}
+          options={{ tabBarLabel: "Followers " + followers?.length || 0 }}
         />
         <Tab.Screen
           name="Following"
           component={FollowingScreen}
-          options={{ tabBarLabel: "Following " + followings.length }}
+          options={{ tabBarLabel: "Following " + followings?.length || 0 }}
         />
       </Tab.Navigator>
     </View>

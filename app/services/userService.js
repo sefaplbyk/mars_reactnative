@@ -73,6 +73,7 @@ export const checkAccessibilityAndGetUserPost = async (userId, profileId) => {
 export const getFollowers = async (userId) => {
   try {
     const res = await axios.get(`${API_URL}/users/followers/${userId}`);
+
     return res.data;
   } catch (error) {
     console.error("Error fetching user posts:", error.message);
@@ -101,5 +102,17 @@ export const updateUserProfile = async (userId, fullname, bio) => {
       success: false,
       error: error.response?.data || error.message
     };
+  }
+};
+export const unfollowUser = async (followerId, followingId) => {
+  try {
+    const response = await axios.post(`${API_URL}/users/unfollow`, {
+      followerId,
+      followingId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Takipten çıkma hatası:", error);
+    throw error;
   }
 };
