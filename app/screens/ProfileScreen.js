@@ -27,7 +27,7 @@ import Post from "../components/post/Post";
 import { getLoggedInUserPosts } from "../services/postService";
 import { formatDate } from "../utils/formatDate";
 import Screen from "../components/layout/Screen";
-import { sendFollowReq } from "../services/requestService";
+import { checkFollowStatus, sendFollowReq, cancelFollowRequest } from "../services/requestService";
 import EditProfileModal from "../components/profile/EditProfileModal";
 
 const ProfileScreen = ({ route }) => {
@@ -41,6 +41,9 @@ const ProfileScreen = ({ route }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [followStatus, setFollowStatus] = useState(null);
+
 
   const isOwnProfile =
     !route.params?.id || route.params?.id === (user.luid || user._id);
@@ -69,6 +72,8 @@ const ProfileScreen = ({ route }) => {
     try {
       const followings = await getFollowings(user._id);
       const isFollowingUser = followings.some((f) => f._id === userId);
+      const res = await checkFollowStatus(user._id, userId)
+      setFollowStatus(res.status)
       setIsFollowing(isFollowingUser);
     } catch (err) {
       console.log("Takip kontrolü başarısız:", err);
@@ -87,7 +92,7 @@ const ProfileScreen = ({ route }) => {
 
   useEffect(() => {
     fetchUserData();
-  }, [userId]);
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -97,15 +102,13 @@ const ProfileScreen = ({ route }) => {
   const handleFollow = async () => {
     try {
       const info = await sendFollowReq(user._id, userId);
-      console.log(info, "info");
       await checkIfFollowing();
     } catch (err) {
       console.log("Takip isteği gönderilemedi:", err);
     }
   };
 
-   const handleUnfollow = async () => {
-    console.log(user._id, userId,"user._id, userId")
+  const handleUnfollow = async () => {
     try {
       await unfollowUser(user._id, userId);
       setIsFollowing(false);
@@ -113,6 +116,15 @@ const ProfileScreen = ({ route }) => {
       console.log("Takipten çıkılamadı:", err);
     }
   };
+
+  const handleCancelFollowRequest = async () => {
+    try {
+      await cancelFollowRequest(user._id, userId)
+      setFollowStatus("")
+    } catch (err) {
+      console.log("Takip kontrolü başarısız:", err);
+    }
+  }
 
   const renderPostItem = ({ item }) => (
     <Post
@@ -202,7 +214,7 @@ const ProfileScreen = ({ route }) => {
         <View style={styles.buttonGroup}>
           {isOwnProfile ? (
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.profileBtn, { backgroundColor: COLORS.secondary }]}
               onPress={() => setModalVisible(true)}
             >
               <EditProfileModal
@@ -215,16 +227,18 @@ const ProfileScreen = ({ route }) => {
             </TouchableOpacity>
           ) : isFollowing ? (
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.profileBtn, { backgroundColor: COLORS.gray, }]}
               onPress={handleUnfollow}
             >
               <Text style={styles.buttonText}>Takipten Çık</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.editButton} onPress={handleFollow}>
-              <Text style={styles.buttonText}>Takip Et</Text>
+            <TouchableOpacity style={[styles.profileBtn, { backgroundColor: COLORS.gray, }]} onPress={followStatus == "pending" ? handleCancelFollowRequest : handleFollow}>
+              {/* Takip isteği yollandıysa -> Takip isteği yollandı Yollanmadıysa -> Takip et  */}
+              <Text style={styles.buttonText}>{followStatus == "pending" ? "Takip isteğini iptal et" : "Takip Et"}</Text>
             </TouchableOpacity>
           )}
+
         </View>
       </View>
 
@@ -273,6 +287,8 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     padding: 15,
+    borderWidth: 2,
+    borderBottomColor: COLORS.accent,
   },
   profileHeader: {
     flexDirection: "row",
@@ -322,9 +338,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     gap: 10,
   },
-  editButton: {
+  profileBtn: {
     flex: 1,
-    backgroundColor: COLORS.secondary,
     padding: 8,
     borderRadius: 6,
     alignItems: "center",
