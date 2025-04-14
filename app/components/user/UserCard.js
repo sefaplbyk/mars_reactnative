@@ -6,24 +6,64 @@ import {
   Image,
   Pressable,
 } from "react-native";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { COLORS } from "../../config";
 import { getProfilePic } from "../../utils/profilePicUtils";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused, useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
-import { sendFollowReq } from "../../services/requestService";
+import { cancelFollowRequest, checkFollowStatus, sendFollowReq } from "../../services/requestService";
+import { getFollowings, unfollowUser } from "../../services/userService";
 
 const UserCard = ({ username, email, profilePicture, id }) => {
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followStatus, setFollowStatus] = useState(null);
+
   const { user } = useAuth();
-  console.log(user)
   const userId = user._id || user.luid;
   // const userId = user.luid ? user.luid : user._id
   const navigation = useNavigation();
 
-  const handleFollow = async () => {
-    await sendFollowReq(userId, id);
+  const checkIfFollowing = async () => {
+    try {
+      const followings = await getFollowings(userId);
+      const isFollowingUser = followings.some((f) => f._id === id);
+      const res = await checkFollowStatus(userId, id)
+      setFollowStatus(res.status)
+      setIsFollowing(isFollowingUser);
+    } catch (err) {
+      console.log("Takip kontrolü başarısız:", err);
+    }
   };
 
+  const handleFollow = async () => {
+    try {
+      await sendFollowReq(userId, id);
+      await checkIfFollowing();
+    } catch (err) {
+      console.log("Takip isteği gönderilemedi:", err);
+    }
+  };
+  const handleUnfollow = async () => {
+    try {
+      await unfollowUser(userId, id);
+      setIsFollowing(false);
+    } catch (err) {
+      console.log("Takipten çıkılamadı:", err);
+    }
+  };
+  const handleCancelFollowRequest = async () => {
+    try {
+      await cancelFollowRequest(id, userId)
+      setFollowStatus("")
+    } catch (err) {
+      console.log("Takip kontrolü başarısız:", err);
+    }
+  }
+
+  useEffect(() => {
+    checkIfFollowing()
+  }, [])
+ 
   return (
     <Pressable
       onPress={() => navigation.navigate("UserProfile", { id })}
@@ -34,7 +74,7 @@ const UserCard = ({ username, email, profilePicture, id }) => {
         alignItems: "center",
         borderRadius: 10,
         paddingVertical: 20,
-        width: "48%",
+        minWidth: "48%",
         gap: 10,
       }}
     >
@@ -67,29 +107,35 @@ const UserCard = ({ username, email, profilePicture, id }) => {
           {email}
         </Text>
       </View>
-      <TouchableOpacity
-        style={{
-          backgroundColor: COLORS.accent,
-          padding: 10,
-          width: "80%",
-          borderRadius: 10,
-        }}
-        onPress={handleFollow}
-      >
-        <Text
-          style={{
-            color: COLORS.text,
-            textAlign: "center",
-            fontWeight: "500",
-          }}
+      {isFollowing ? (
+        <TouchableOpacity
+          style={[styles.profileBtn, { backgroundColor: COLORS.gray, }]}
+          onPress={handleUnfollow}
         >
-          Follow
-        </Text>
-      </TouchableOpacity>
+          <Text style={styles.buttonText}>Takipten Çık</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={[styles.profileBtn, { backgroundColor: COLORS.gray, }]}
+          onPress={followStatus == "pending" ? handleCancelFollowRequest : handleFollow}>
+          {/* Takip isteği yollandıysa -> Takip isteği yollandı Yollanmadıysa -> Takip et  */}
+          <Text style={styles.buttonText}>{followStatus == "pending" ? "Takip isteğini iptal et" : "Takip Et"}</Text>
+        </TouchableOpacity>
+      )}
     </Pressable>
   );
 };
 
 export default UserCard;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  profileBtn: {
+    flex: 1,
+    padding: 8,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontWeight: "600",
+  },
+});

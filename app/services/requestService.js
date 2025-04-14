@@ -15,7 +15,6 @@ export const getRequest = async (userId) => {
 };
 
 export const sendFollowReq = async (requesterId, targetId) => {
-  console.log(requesterId, targetId, "Here");
   try {
     const response = await axios.post(
       `${API_URL}/user/followReq`,

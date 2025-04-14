@@ -5,32 +5,69 @@ import {
   Image,
   ScrollView,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
-import React, { use, useEffect, useState } from "react";
+import React, { use, useCallback, useEffect, useState } from "react";
 import Screen from "../components/layout/Screen";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import Searchicon from "react-native-vector-icons/Ionicons";
 import UserCard from "../components/user/UserCard";
 import { COLORS } from "../config";
-import { getAllUsers } from "../services/userService";
+import { useAuth } from "../context/AuthContext";
+import { fetchNotFollowedUsers } from "../services/userService";
+import { RefreshControl } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 const FindPeopleScreen = () => {
+
+  const { user } = useAuth()
+
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+
+
 
   const filteredData = users.filter((item) =>
     item.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const fetchAllUsers = async () => {
-    getAllUsers().then((response) => {
-      setUsers(response);
-    });
-  };
-  useEffect(() => {
-    fetchAllUsers();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const getUsers = async () => {
+        setLoading(true)
+        const data = await fetchNotFollowedUsers(user._id);
+        setUsers(data);
+        setLoading(false);
+      };
+      getUsers();
 
+    }, [])
+  );
+  // useEffect(() => {
+  //   const getUsers = async () => {
+  //     const data = await fetchNotFollowedUsers(user._id);
+  //     setUsers(data);
+  //   };
+  //   getUsers();
+  // }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    const data = await fetchNotFollowedUsers(user._id);
+    setUsers(data);
+    setRefreshing(false);
+  };
+
+  if (loading) {
+    return (
+      <Screen>
+        <ActivityIndicator size="large" color={COLORS.secondary} />
+      </Screen>
+    );
+  }
   return (
     <Screen>
       <View
@@ -93,6 +130,9 @@ const FindPeopleScreen = () => {
             alignItems: "center",
             width: "90%",
           }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <View
             style={{

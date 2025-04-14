@@ -36,9 +36,10 @@ const Header = ({ username }) => {
 };
 
 const UserCard = ({ user, onToggleFollow }) => {
+  const navigation = useNavigation()
   console.log(user,"user")
   return (
-    <View style={styles.userCard}>
+    <TouchableOpacity onPress={() => navigation.navigate("UserProfile", { id:user._id })} style={styles.userCard}>
       <Image source={getProfilePic(user.profilePicture)} style={styles.avatar} />
       <View style={styles.userInfo}>
         <Text style={styles.name}>{user.fullname}</Text>
@@ -63,7 +64,7 @@ const UserCard = ({ user, onToggleFollow }) => {
           {user.isFollowing ? "Following" : "Follow"}
         </Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 };
 

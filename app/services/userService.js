@@ -116,3 +116,11 @@ export const unfollowUser = async (followerId, followingId) => {
     throw error;
   }
 };
+export const fetchNotFollowedUsers = async (myId) => {
+  try {
+    const res = await axios.get(`${API_URL}/users/not-followed/${myId}`);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
